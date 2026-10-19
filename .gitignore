@@ -1,0 +1,21 @@
+# Local personal data
+/resume.txt
+*.pdf
+*.docx
+*backup*.json
+
+# Credentials and local hosting state
+.env
+.env.*
+!.env.example
+.openai/
+
+# Dependencies and local artifacts
+node_modules/
+.npm-cache/
+*.log
+*.tar.gz
+coverage/
+tmp/
+.DS_Store
+Thumbs.db
