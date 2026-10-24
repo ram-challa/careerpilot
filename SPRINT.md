@@ -1,5 +1,7 @@
 # Sprint one — usable prototype
 
+Historical sprint-one scope is recorded below. The subsequent structured resume editor and OpenAI integration are implemented locally; see AI-EDITOR.md for current behavior and verification limits.
+
 ## Experience
 
 CareerPilot uses a forest-green and sage palette, spacious job cards, a persistent workspace sidebar and a focused resume editor. Four primary destinations: Opportunities, Resume studio, Application tracker and My profile. The extension setup page explains installation and synchronization.

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AI setup · CareerPilot</title>
+  <link rel="stylesheet" href="style.css?v=resume-studio-v4-openai">
+  <style>
+    body{min-height:100vh;padding:38px 20px}.setup-shell{max-width:600px;margin:0 auto}.setup-shell>.brand{width:fit-content;margin-bottom:36px}.setup-shell .panel{padding:30px}.setup-shell h1{font-size:28px}.setup-shell .primary{width:100%;margin-top:5px}.setup-shell .setup-message{font-size:13px;line-height:1.7;padding:13px;border-radius:7px;background:#edf3e8;margin:18px 0;overflow-wrap:anywhere}.setup-shell .setup-message.error{background:#fbede8;color:#944937}.setup-shell .setup-details{font-size:12px;color:var(--muted);line-height:1.8}.setup-shell .back-link{display:inline-block;margin-top:16px;font-size:12px;font-weight:600}.setup-shell .note{font-size:11px}button:disabled{opacity:.5;cursor:wait}@media(max-width:600px){body{padding:24px 16px}.setup-shell .panel{padding:22px}}
+  </style>
+</head>
+<body>
+  <div class="setup-shell">
+    <a class="brand" href="/#resumes"><span class="brand-icon">↗</span> CareerPilot</a>
+    <section class="panel">
+      <span class="eyebrow">OpenAI CONNECTION</span>
+      <h1>AI setup</h1>
+      <p class="muted">Connect your OpenAI API key to personalize a resume and critically review it against a saved job.</p>
+      <form id="standalone-ai-form">
+        <div id="connection-status" data-openai-status class="setup-message" role="status" aria-live="polite">Checking the local OpenAI server…</div>
+        <label for="api-key">OpenAI API key</label>
+        <input id="api-key" data-openai-key type="password" autocomplete="off" spellcheck="false" placeholder="sk-…" required aria-describedby="key-help">
+        <p id="key-help" class="setup-details">The key stays in the local server’s memory until it restarts. It is never saved in your browser, resume, or exports.</p>
+        <button id="save-api-key" data-openai-save class="primary" type="submit" disabled>Save key for this session</button>
+      </form>
+      <p class="note">Personalization sends your current resume and selected job description to OpenAI in two API calls: draft, then critical review and revision. Review the proposal before applying it. This uses your OpenAI API credits.</p>
+      <a class="back-link" href="/?v=resume-studio-v4-openai#resumes">← Return to resume studio</a>
+      <noscript><p class="setup-message error">Enable JavaScript to connect the local AI server.</p></noscript>
+    </section>
+  </div>
+  <script type="module" src="ai-setup.js?v=resume-studio-v4-openai"></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+import test,{after,before} from 'node:test';
+import assert from 'node:assert/strict';
+import {spawn} from 'node:child_process';
+import {execFile} from 'node:child_process';
+import {promisify} from 'node:util';
+import {fileURLToPath} from 'node:url';
+import {AI_BUILD,AI_PROVIDER} from '../dist/ai-provider.js';
+
+let processHandle;
+const origin='http://127.0.0.1:4177';
+before(async()=>{
+  processHandle=spawn(process.execPath,['server.mjs'],{cwd:fileURLToPath(new URL('../',import.meta.url)),env:{...process.env,PORT:'4177',OPENAI_API_KEY:'',OPENAI_MODEL:'gpt-6.1-sol',NVIDIA_API_KEY:'nvapi-old-nvidia-key-must-be-ignored',NIM_API_KEY:'nvapi-old-nvidia-alias-must-be-ignored',NIM_MODEL:'vendor/model'},stdio:'pipe',windowsHide:true});
+  let failure='';processHandle.stderr.on('data',c=>failure+=c);
+  await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Test server did not start. '+failure)),5000);processHandle.stdout.on('data',c=>{if(String(c).includes('Local:')){clearTimeout(timer);resolve()}});processHandle.once('error',reject);});
+});
+after(()=>processHandle?.kill());
+test('server identifies OpenAI and ignores NVIDIA environment credentials',async()=>{const res=await fetch(origin+'/api/status');assert.equal(res.status,200);const status=await res.json();assert.equal(status.configured,false);assert.equal(status.build,AI_BUILD);assert.equal(status.provider,'openai');assert.equal(status.model,'gpt-6.1-sol');assert.equal(status.apiKey,undefined)});
+test('missing API key fails visibly without a fake revision',async()=>{const res=await fetch(origin+'/api/personalize',{method:'POST',headers:{'Content-Type':'application/json','X-CareerPilot':'1'},body:'{}'});assert.equal(res.status,503);const data=await res.json();assert.equal(data.code,'key_missing');assert.equal(data.resume,undefined)});
+test('cross-site API calls and writes without explicit JSON marker are rejected',async()=>{const res=await fetch(origin+'/api/config',{method:'POST',headers:{Origin:'https://untrusted.example','Content-Type':'application/json','X-CareerPilot':'1'},body:JSON.stringify({apiKey:'sk-not-a-real-key-for-testing'})});assert.equal(res.status,403);assert.equal(res.headers.get('access-control-allow-origin'),null);const noHeader=await fetch(origin+'/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});assert.equal(noHeader.status,400)});
+test('only static distribution is served and template modules have JavaScript MIME',async()=>{const js=await fetch(origin+'/resume-model.js');assert.equal(js.status,200);assert.ok(js.headers.get('content-type').startsWith('text/javascript'));const source=await fetch(origin+'/ai.mjs');assert.equal(source.status,404);const keyFile=await fetch(origin+'/.env');assert.equal(keyFile.status,404)});
+test('local distribution restores key-only OpenAI setup and its module graph',async()=>{const html=await fetch(origin+'/ai-setup.html');assert.equal(html.status,200);const text=await html.text();assert.ok(text.includes('<h1>AI setup</h1>'));assert.ok(text.includes('data-openai-key type="password"'));assert.ok(text.includes('OpenAI API key'));assert.ok(!text.includes('data-nim-model'));for(const asset of ['/ai-setup.js?v='+AI_BUILD,'/api-client.js','/ai-provider.js','/openai-setup.js','/resume-studio.js','/studio.css']){const r=await fetch(origin+asset);assert.equal(r.status,200,asset);}assert.equal((await fetch(origin+'/nim-setup.js')).status,404);const entry=await fetch(origin+'/').then(r=>r.text());assert.ok(entry.includes('href="ai-setup.html?v='+AI_BUILD+'"'));});
+test('launcher recognizes the updated server without replacing its process or session',async()=>{const result=await promisify(execFile)(process.execPath,['scripts/start-local.mjs','--port=4177','--no-browser'],{cwd:fileURLToPath(new URL('../',import.meta.url)),windowsHide:true});assert.ok(result.stdout.includes('already running'));assert.ok(result.stdout.includes('ai-setup.html'));const res=await fetch(origin+'/api/status');assert.equal(res.status,200);});
+test('OpenAI setup accepts its key without a model picker and never reuses NIM credentials',async()=>{const post=body=>fetch(origin+'/api/config',{method:'POST',headers:{'Content-Type':'application/json','X-CareerPilot':'1'},body:JSON.stringify(body)});assert.equal((await post({apiKey:'nvapi-not-a-real-key-for-testing'})).status,400);const key='sk-not-a-real-key-for-testing';const saved=await post({apiKey:key});assert.equal(saved.status,200);assert.ok(!(await saved.text()).includes(key));const status=await fetch(origin+'/api/status').then(r=>r.json());assert.equal(status.configured,true);assert.equal(status.model,'gpt-6.1-sol');assert.equal(status.provider,AI_PROVIDER);assert.equal(status.apiKey,undefined);});
